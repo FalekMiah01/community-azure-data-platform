@@ -1,6 +1,6 @@
 ### Databricks Delta Cache and Spark Cache 
 
-These notebook is to compare **Databricks Delta Cache and Spark Cache** differences. 
+These notebooks compare **Databricks Delta Cache and Spark Cache** differences. 
 
 | Notebook               | Description                    |
 | ---------------------- | ------------------------------ |
