@@ -1,0 +1,31 @@
+# The main job for lakehouse_demo with serverless_cluster.
+resources:
+  jobs:
+    dabs_lakehouse_demo_serverless_job:
+      name: dabs_lakehouse_demo_serverless_job
+
+      email_notifications:
+        on_failure:
+          - falek@advancinganalytics.co.uk
+
+      tasks:
+        - task_key: landing_to_bronze
+          notebook_task:
+            notebook_path: ../src/dabs_lakehouse_demo/nb_1_landing_to_bronze.ipynb
+
+        - task_key: bronze_to_silver
+          depends_on:
+            - task_key: landing_to_bronze
+          notebook_task:
+            notebook_path: ../src/dabs_lakehouse_demo/nb_2_bronze_to_silver.ipynb
+
+        - task_key: silver_to_gold
+          depends_on:
+            - task_key: bronze_to_silver
+          notebook_task:
+            notebook_path: ../src/dabs_lakehouse_demo/nb_3_silver_to_gold.ipynb
+
+      environments:
+        - environment_key: serverless_cluster
+          spec:
+            client: "1"

@@ -1,0 +1,34 @@
+# The main job for dabs_test_wheel.
+resources:
+  jobs:
+    dabs_python_wheel_job:
+      name: dabs_python_wheel_job
+
+      email_notifications:
+        on_failure:
+          - falek@advancinganalytics.co.uk
+
+      tasks:
+        - task_key: python_wheel_notebook
+          job_cluster_key: job_cluster
+          notebook_task:
+            notebook_path: ../src/nb_python_wheel_demo.ipynb
+        
+        - task_key: python_wheel
+          depends_on:
+            - task_key: python_wheel_notebook
+          job_cluster_key: job_cluster
+          python_wheel_task:
+            package_name: dabs_python_wheel
+            entry_point: main
+          libraries:
+            - whl: ../dist/*.whl
+
+      job_clusters:
+        - job_cluster_key: job_cluster
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_D3_v2
+            autoscale:
+                min_workers: 1
+                max_workers: 4

@@ -1,0 +1,19 @@
+# The main job for lakehouse_demo with serverless_cluster.
+resources:
+  jobs:
+    dabs_lakehouse_demo_x_clean_up:
+      name: dabs_lakehouse_demo_x_clean_up
+
+      email_notifications:
+        on_failure:
+          - falek@advancinganalytics.co.uk
+
+      tasks:
+        - task_key: clean_up_lakehouse_tables
+          notebook_task:
+            notebook_path: ../src/dabs_lakehouse_demo/nb_9_clean_up_existing_tables_files.ipynb
+
+      environments:
+        - environment_key: serverless_cluster
+          spec:
+            client: "1"

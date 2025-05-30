@@ -1,0 +1,88 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: '<azure_subscription>'
+  keyVaultName: '<key_vault_name>'
+  databricksHost: 'https://<databricks_instance>'
+  databricksToken: '<databricks_token>'
+  databricksClusterID: '<databricks_cluster_id>'
+
+stages:
+  - stage: Build
+    displayName: "Build Wheel"
+    jobs:
+      - job: BuildWheel
+        displayName: "Build Python Wheel"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install poetry
+              poetry install --no-dev
+              poetry build
+            displayName: 'Build Python Package with Poetry'
+          
+          ## Run Tests with PyTest
+          # - script: |
+          #     poetry run pytest --junitxml=pytest-results.xml
+          #   displayName: 'Run Tests with PyTest'
+          
+          # - task: PublishTestResults@2
+          #   inputs:
+          #     testResultsFiles: '**/pytest-results.xml'
+          #     testRunTitle: 'PyTest Results'
+          #   condition: succeededOrFailed()
+          #   displayName: 'Publish PyTest Results'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: 'dist'
+              artifactName: 'python-wheel'
+            displayName: "Publish Wheel as Artifact"
+
+  - stage: Deploy
+    displayName: "Deploy to Databricks"
+    dependsOn: Build
+    jobs:
+      - job: DeployWheel
+        displayName: "Deploy Python Wheel to Databricks"
+        steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              artifactName: 'python-wheel'
+              downloadPath: '$(Build.ArtifactStagingDirectory)'
+            displayName: "Download Wheel Artifact"
+
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              KeyVaultName: $(keyVaultName)
+              SecretsFilter: 'databricks-token'
+              runAsPreJob: false
+            displayName: "Retrieve Databricks Token from Key Vault"
+
+          - script: |
+              pip install databricks-cli
+              WHEEL_PATH=$(ls $(Build.ArtifactStagingDirectory)/python-wheel/*.whl)
+              databricks fs cp $WHEEL_PATH dbfs:/FileStore/wheels/ --overwrite
+            env:
+              DATABRICKS_HOST: $(databricksHost)
+              DATABRICKS_TOKEN: $(databricksToken)
+            displayName: "Upload Wheel to DBFS"
+
+          - script: |
+              WHEEL_FILE=$(ls $(Build.ArtifactStagingDirectory)/python-wheel/*.whl | xargs -n 1 basename)
+              databricks libraries install --cluster-id $(databricksClusterID) --whl dbfs:/FileStore/wheels/$WHEEL_FILE
+            env:
+              DATABRICKS_HOST: $(databricksHost)
+              DATABRICKS_TOKEN: $(databricksToken)
+            displayName: "Install Wheel on Databricks Cluster"
