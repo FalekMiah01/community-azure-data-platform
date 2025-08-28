@@ -1,0 +1,14 @@
+# The main pipeline for dabs_fm_demo_live
+resources:
+  pipelines:
+    dabs_fm_demo_live_pipeline:
+      name: dabs_fm_demo_live_pipeline
+      ## Specify the 'catalog' field to configure this pipeline to make use of Unity Catalog:
+      # catalog: catalog_name
+      target: dabs_fm_demo_live_${bundle.target}
+      libraries:
+        - notebook:
+            path: ../src/dlt_pipeline.ipynb
+
+      configuration:
+        bundle.sourcePath: ${workspace.file_path}/src

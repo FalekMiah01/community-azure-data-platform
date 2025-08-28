@@ -13,7 +13,7 @@ cd ../../../
 python ./run_remove_underscores_from_columns.py
 
 # Install wheel:
-cd z_data_cleansing/dist/
+cd wheel/z_data_cleansing/dist/
 py -m pip install z_data_cleansing-0.1.0-py3-none-any.whl
 
 """
